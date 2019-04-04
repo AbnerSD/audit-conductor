@@ -943,7 +943,7 @@ def log_time():
        states_file.write('\n'+str(tuple((datetime.now().isoformat(), j))))
    return ''
 
-# SANJAY-Faisal Script tried to run but could not get success.
+# JSON file upload function to allow .json uploads and check text format
 @app.route('/upload-ballot-manifest-json', methods=['POST'])
 def upload_json():
     # "Be conservative in what you send, be liberal in what you accept"
@@ -997,9 +997,7 @@ def upload_json():
         except:
             return "File Format Incorrect Please use id: title: candidates:", 500
     return "Invalid File", 500
-
-
-# SANJAY-Faisal Script End
+# JSON function end
 
 ### Static files
 @app.route('/jquery.js')
