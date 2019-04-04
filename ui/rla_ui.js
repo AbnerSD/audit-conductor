@@ -11,6 +11,7 @@
 (function(){
 
 var debugMode = false; // true;
+var appendJsonForm = true; 
 
 if (debugMode) {
    //alert('Note: running in debug mode!');
@@ -45,7 +46,7 @@ var auditNameContainer;
 var seedContainer;
 var auditTypeContainer;
 // var finalResultContainer;
-var cvrFileUploadContainer;
+var cvrFileUploadContainer, jsonFileUploadContainer;
 var ballotListDiv; // rename for consistency?
 // var ballotEntriesContainer;
 
@@ -75,6 +76,7 @@ window.onload = function() {
    auditTypeContainer = getById('auditTypeContainer');
    //finalResultContainer = getById('finalResultContainer');
    cvrFileUploadContainer = getById('cvrFileUploadContainer');
+   jsonFileUploadContainer = getById('jsonFileUploadContainer');
    ballotListDiv = getById('listOfBallotsToPull');
    // ballotEntriesContainer = getById('ballotEntriesContainer');
 
@@ -165,8 +167,10 @@ function maybeGetAuditType(andThen) {
    if ( ! uiState['got_audit_type']) {
       var auditType = conductorState['audit_type_name'];
       if (auditType === null) {
-         chooseAuditType();
+         uploadBallotManifestJson('ballot_comparison'); // call upload JSON function 
+       
       } else {
+         displayJSONFile();
          displayAuditType();
          //mainLoop();
          andThen();
@@ -289,6 +293,9 @@ function announce(announcement) {
 };
 
 function chooseAuditType() {
+   // Moved here to display the choose audit type container
+   var auditTypeContainerText = getById('auditTypeContainer');
+   auditTypeContainerText.style.display = 'block';
    $.ajax({
       url: '/get-audit-types',
       method: 'GET',
@@ -392,6 +399,7 @@ function makeBallotManifestUploadContainer(ballotType) {
    var fileInput = newElem('input');
    fileInput.type = 'file';
    fileInput.name = 'file';
+   fileInput.accept = '.csv,.CSV'; // Only shows these file extensions when uploading
    var fileLabel = newElem('label');
    fileLabel.for = 'file'; // works?
    fileLabel.innerHTML = 'Select a file: ';
@@ -1013,5 +1021,127 @@ function restrictInput(event) {
    var pattern = new RegExp(regexData.regex);
    return pattern.test(value);
 }
+   
+// JSON File upload functions HERE
+function maybeGetJSONFile(ballotType) {
+    return function() {
+        document.body.appendChild(jsonFileUploadContainer);
+        if (conductorState['json_hash'][ballotType] === undefined) {
+            uploadJSONFile(ballotType);
+        } else {
+            displayJSONFile(ballotType);
+            mainLoop();
+        }
+    }
+};
+
+ // JSON Function
+function uploadBallotManifestJson(ballotType) {
+  makeBallotManifestUploadContainerJson(ballotType);
+};
+ // Creates front end form Container for JSON uploading
+function makeBallotManifestUploadContainerJson(ballotType) {
+	
+  var container = newElem('div');
+  var p = newElem('p');
+  p.innerHTML = 'Upload a JSON Manifest'; // Prompt to upload JSON file
+  container.appendChild(p);
+  var uploadForm = newElem('form');
+  uploadForm.setAttribute('method', 'post');
+  uploadForm.setAttribute('enctype', 'multipart/form-data');
+  var fieldSet1 = newElem('fieldset');
+  var fieldSet2 = newElem('fieldset');
+  var fileInput = newElem('input');
+  fileInput.type = 'file';
+  fileInput.name = 'file';
+  fileInput.accept = '.json,.JSON'; // will only display these file extension types when uploading
+  var fileLabel = newElem('label');
+  fileLabel.for = 'file'; // works?
+  fileLabel.innerHTML = 'Select a file: ';
+  var uploadButton = newElem('button');
+  uploadButton.id = 'uploadBallotManifestButtonJson'; // TODO: don't need (or won't)
+  uploadButton.innerHTML = 'Upload';
+  uploadButton.type = 'button'; // so it doesn't submit the form
+  var jsonFileUploadContainer = getById('jsonFileUploadContainer'); // Get selector
+
+  uploadButton.onclick = function() {
+
+    var form_data = new FormData(uploadForm);
+    form_data.append('contest_name', ballotType);
+    $.ajax({
+      type: 'POST',
+      url: '/upload-ballot-manifest-json',
+      data: form_data,
+      dataType: 'json',
+      contentType: false,
+      cache: false,
+      processData: false,
+      success: function() {
+
+        getConductorState(function() {
+		  jsonFileUploadContainer.classList.add('complete');
+          chooseAuditType();
+         
+          container.innerHTML = JSONDisplayText(ballotType); // Displays message upon succesful upload
+		  container.removeChild(uploadForm); // Remove form child
+          mainLoop();
+		  appendJsonForm = false;
+        });
+      },
+    }).fail(reportError);
+  };
+
+  if (appendJsonForm) {
+	  
+   fieldSet1.appendChild(fileLabel);
+   fieldSet1.appendChild(fileInput);
+   fieldSet2.appendChild(uploadButton);
+   uploadForm.appendChild(fieldSet1);
+   uploadForm.appendChild(fieldSet2);
+   container.appendChild(uploadForm);
+   jsonFileUploadContainer.appendChild(container); /*this line will create html to frontend*/
+  }
+};
+
+// upload Json function
+function uploadJSONFile(ballotType) {
+  jsonFileUploadContainer.style.display = 'block';
+
+  var uploadButton = getById('uploadJSONButton');
+  var uploadForm = getById('uploadJSONForm');
+
+  $(uploadButton).click(function() {
+    var form_data = new FormData(uploadForm);
+    form_data.append('contest_name', ballotType);
+    $.ajax({
+      type: 'POST',
+      url: '/upload-json-file', // ?contest_name='+ballotType,
+      data: form_data,
+      contentType: false,
+      cache: false,
+      processData: false,
+      success: function(data) {
+        console.log('Success!');
+        getConductorState(function() {
+          displayJSONFile(ballotType);
+          mainLoop();
+        });
+      },
+    }).fail(reportError);
+  });
+
+}
+// this will display text to page after json upload 
+function displayJSONFile(ballotType) {
+  jsonFileUploadContainer.style.display = 'block';
+  jsonFileUploadContainer.innerHTML = '(JSON file added)'; // Displayed after JSON file is uploaded 
+  jsonFileUploadContainer.classList.add('complete');
+
+  //uiState['got_cvr_file'] = true;
+};
+// Text to show that file has been uploaded succesfully 
+function JSONDisplayText(ballotType) {
+	return 'JSON File Added ';
+};
    
 })();
