@@ -10,6 +10,7 @@
 
 import copy
 import csv
+import json
 from datetime import datetime # , isoformat
 from flask import Flask, jsonify, request, url_for, send_from_directory, Response
 from werkzeug import secure_filename
@@ -120,50 +121,7 @@ reported_results_portsmouth = [
 # contests and candidates are in the order of appearance on the ballot
 # (or data entry screen)
 
-all_contests_bristol = [
-
-      {'id': 'senator',
-       'title': 'Senator in Congress',
-       'candidates': ['DEM Sheldon Whitehouse', 'REP Robert G. Flanders Jr.'],
-      },
-      {'id': 'rep_1',
-       'title': 'Representative in Congress District 1 (13213)',
-       'candidates': ['DEM David N. Cicilline (13215)', 'REP Patrick J. Donovan'],
-      },
-      {'id': 'governor',
-       'title': 'Governor',
-       'candidates': ['DEM Gina M. Raimondo', 'MOD William H. Gilbert', 'REP Allan W. Fung', 'Com Anne Armstrong', 'Ind Luis Daniel Munoz', 'Ind Joseph A. Trillo'],
-      },
-      {'id': 'lieutenant_governor',
-       'title': 'Lieutenant Governor',
-       'candidates': ['DEM Daniel J. McKee', 'MOD Joel J. Hellmann', 'REP Paul E. Pence', 
-             'Ind Jonathan J. Riccitelli', 'Ind Ross K. McCurdy'],
-      },
-      {'id': 'secretary_of_state',
-       'title': 'Secretary of State',
-       'candidates': ['DEM Nellie M. Gorbea', 'REP Pat V. Cortellessa'],
-      },
-      {'id': 'attorney_general',
-       'title': 'Attorney General',
-       'candidates': ['DEM Peter F. Neronha', 'Com Alan Gordon'],
-      },
-      {'id': 'treasurer',
-       'title': 'General Treasurer',
-       'candidates': ['DEM Seth Magaziner', 'REP Michael G. Riley'],
-      },
-      {'id': 'issue_1',
-       'title': '1. RHODE ISLAND SCHOOL BUILDINGS - $250,000,000',
-       'candidates': ['Approve', 'Reject'],
-      },
-      {'id': 'issue_2',
-       'title': '2. HIGHER EDUCATION FACILITIES - $70,000,000',
-       'candidates': ['Approve', 'Reject'],
-      },
-      {'id': 'issue_3',
-       'title': '3. GREEN ECONOMY AND CLEAN WATER - $47,300,000',
-       'candidates': ['Approve', 'Reject'],
-      },
-      ]
+all_contests_bristol = []
 
    # 'main_contest_id': 'issue_2', 
 
@@ -984,6 +942,64 @@ def log_time():
    with open(fname, 'a') as states_file:
        states_file.write('\n'+str(tuple((datetime.now().isoformat(), j))))
    return ''
+
+# SANJAY-Faisal Script tried to run but could not get success.
+@app.route('/upload-ballot-manifest-json', methods=['POST'])
+def upload_json():
+    # "Be conservative in what you send, be liberal in what you accept"
+    # TODO: for transparency, also return the file's hash
+    if 'file' not in request.files:
+        return 'File not uploaded', 400
+    else:
+        print("File found")
+    file = request.files['file']
+    contest_name = request.form['contest_name']
+    # "if user does not select file, browser also"
+    # "submit an empty part without filename"
+    if file.filename == '':
+        return 'No selected file', 400
+    if file:  # and allowed_file(file.filename):
+        filename = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
+        file.save(filename)
+        with open(filename, 'r') as FO:
+            uploaded_content = FO.read()
+        import ast
+        global all_contests_bristol
+        #reading it as json
+        uploaded_json = json.loads(json.dumps(ast.literal_eval(uploaded_content)))
+        #clearing all_contests_bristol
+        all_contests_bristol = []
+        for current_dic in uploaded_json:
+            #making list and dictionaries from json
+            item_dic = {'id': current_dic['id'], 'title': current_dic['title'], 'candidates': []}
+            for candidate_item in current_dic['candidates']:
+                item_dic['candidates'].append(candidate_item)
+            all_contests_bristol.append(item_dic)
+
+        global default_audit_state
+        #updating default_audit_state key that depend on all_contests_bristol
+        default_audit_state['all_contests']['ballot_comparison'] = all_contests_bristol
+
+        global audit_types
+        # updating audit_types key that depend on all_contests_bristol
+        audit_types['ballot_comparison']['all_contests'] = all_contests_bristol
+
+        global audit_state
+        audit_state = copy.deepcopy(default_audit_state)
+        # import to help us check json file grammar
+        import ast
+        try:
+            upc = ast.literal_eval(uploaded_content)
+            # here we give the specific text format for the json file
+            for i in upc:
+                a, b, c = i['id'], i['title'], i['candidates']
+            return jsonify(uploaded_content)
+        except:
+            return "File Format Incorrect Please use id: title: candidates:", 500
+    return "Invalid File", 500
+
+
+# SANJAY-Faisal Script End
 
 ### Static files
 @app.route('/jquery.js')
