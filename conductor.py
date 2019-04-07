@@ -10,7 +10,8 @@
 
 import copy
 import csv
-import json
+import json # For use with json files
+import ast  # To help read JSON file text data 
 from datetime import datetime # , isoformat
 from flask import Flask, jsonify, request, url_for, send_from_directory, Response
 from werkzeug import secure_filename
@@ -127,262 +128,7 @@ all_contests_bristol = []
 
    #ballots_cast_for_main_apparent_winner = 
    # total_main_ballots_cast = 9021
-reported_results_bristol = [
-      {'contest_id': 'senator',
-        'results': [
-          {'candidate': 'DEM Sheldon Whitehouse',
-           'proportion': 0.595, # shouldn't be needed at all
-           'votes': 5367
-          },
-          {'candidate': 'REP Robert G. Flanders Jr.',
-           'proportion': 0.389,
-           'votes': 3506
-          },
-          {'candidate': 'Write-in',
-           'proportion': 0.002,
-           'votes': 19
-          },
-          {'candidate': 'undervote',
-           'proportion': 0.014,
-           'votes': 127
-          },
-          {'candidate': 'overvote',
-           'proportion': 0.0002,
-           'votes': 2
-          }
-          ]},
-
-      {'contest_id': 'rep_1',
-        'results': [
-          {'candidate': 'DEM David N. Cicilline (13215)',
-           'proportion': 0.601, 
-           'votes': 5424
-          },
-          {'candidate': 'REP Patrick J. Donovan',
-           'proportion': 0.379,
-           'votes': 3417
-          },
-          {'candidate': 'Write-in',
-           'proportion': 0.001,
-           'votes': 13
-          },
-          {'candidate': 'undervote',
-           'proportion': 0.018,
-           'votes': 166
-          },
-          {'candidate': 'overvote',
-           'proportion': 0.0001,
-           'votes': 1
-          }
-          ]},
-
-       
-      {'contest_id': 'governor',
-        'results': [
-          {'candidate': 'DEM Gina M. Raimondo',
-           'proportion': 0.526,
-           'votes': 4749
-          },
-          {'candidate': 'MOD William H. Gilbert',
-           'proportion': 0.028,
-           'votes': 256
-          },
-          {'candidate': 'REP Allan W. Fung',
-           'proportion': 0.343,
-           'votes': 3094
-          },
-          {'candidate': 'Com Anne Armstrong',
-           'proportion': 0.011,
-           'votes': 103
-          },
-          {'candidate': 'Ind Luis Daniel Munoz',
-           'proportion': 0.014,
-           'votes': 123
-          },
-          {'candidate': 'Ind Joseph A. Trillo',
-           'proportion': 0.056,
-           'votes': 509
-          },
-          {'candidate': 'Write-in',
-           'proportion': 0.004,
-           'votes': 32
-          },
-          {'candidate': 'undervote',
-           'proportion': 0.016,
-           'votes': 143
-          },
-          {'candidate': 'overvote',
-           'proportion': 0.001,
-           'votes': 12
-          }          
-          ]},
-
-      {'contest_id': 'lieutenant_governor',
-        'results': [
-          {'candidate': 'DEM Daniel J. McKee',
-           'proportion': 0.575,
-           'votes': 5184
-          },
-          {'candidate': 'MOD Joel J. Hellmann',
-           'proportion': 0.032,
-           'votes': 291
-          },
-          {'candidate': 'REP Paul E. Pence',
-           'proportion': 0.273,
-           'votes': 2464
-          },
-          {'candidate': 'Ind Jonathan J. Riccitelli',
-           'proportion': 0.028,
-           'votes': 251
-          },
-          {'candidate': 'Ind Ross K. McCurdy',
-           'proportion': 0.022,
-           'votes': 202
-          },
-          {'candidate': 'Write-in',
-           'proportion': 0.015,
-           'votes': 137
-          },
-          {'candidate': 'undervote',
-           'proportion': 0.054,
-           'votes': 490
-          },
-          {'candidate': 'overvote',
-           'proportion': 0.0002,
-           'votes': 2
-          }          
-          ]},
-
-      {'contest_id': 'secretary_of_state',
-        'results': [
-          {'candidate': 'DEM Nellie M. Gorbea',
-           'proportion': 0.651, 
-           'votes': 5873
-          },
-          {'candidate': 'REP Pat V. Cortellessa',
-           'proportion': 0.306,
-           'votes': 2757
-          },
-          {'candidate': 'Write-in',
-           'proportion': 0.001,
-           'votes': 10
-          },
-          {'candidate': 'undervote',
-           'proportion': 0.042,
-           'votes': 381
-          },
-          {'candidate': 'overvote',
-           'proportion': 0.0,
-           'votes': 0
-          }
-          ]},
-  
-      {'contest_id': 'attorney_general',
-        'results': [
-          {'candidate': 'DEM Peter F. Neronha',
-           'proportion': 0.727, 
-           'votes': 6560
-          },
-          {'candidate': 'Com Alan Gordon',
-           'proportion': 0.163,
-           'votes': 1468
-          },
-          {'candidate': 'Write-in',
-           'proportion': 0.006,
-           'votes': 51
-          },
-          {'candidate': 'undervote',
-           'proportion': 0.104,
-           'votes': 941
-          },
-          {'candidate': 'overvote',
-           'proportion': 0.0001,
-           'votes': 1
-          }
-          ]},
-
-      {'contest_id': 'treasurer',
-        'results': [
-          {'candidate': 'DEM Seth Magaziner',
-           'proportion': 0.658, 
-           'votes': 5932
-          },
-          {'candidate': 'REP Michael G. Riley',
-           'proportion': 0.305,
-           'votes': 2751
-          },
-          {'candidate': 'Write-in',
-           'proportion': 0.008,
-           'votes': 7
-          },
-          {'candidate': 'undervote',
-           'proportion': 0.037,
-           'votes': 330
-          },
-          {'candidate': 'overvote',
-           'proportion': 0.0001,
-           'votes': 1
-          }
-          ]},
-
-      {'contest_id': 'issue_1',
-        'results': [
-          {'candidate': 'Approve',
-           'proportion': 0.724, 
-           'votes': 6534
-          },
-          {'candidate': 'Reject',
-           'proportion': 0.225,
-           'votes': 2027
-          },
-          {'candidate': 'undervote',
-           'proportion': 0.051,
-           'votes': 459
-          },
-          {'candidate': 'overvote',
-           'proportion': 0.0001,
-           'votes': 1
-          }
-          ]},
-
-      {'contest_id': 'issue_2',
-        'results': [
-          {'candidate': 'Approve',
-           'proportion': 0.530, 
-           'votes': 4779
-          },
-          {'candidate': 'Reject',
-           'proportion': 0.411,
-           'votes': 3708
-          },
-          {'candidate': 'undervote',
-           'proportion': 0.059,
-           'votes': 533
-          },
-          {'candidate': 'overvote',
-           'proportion': 0.0001,
-           'votes': 1
-          }
-          ]},
-
-      {'contest_id': 'issue_3',
-        'results': [
-          {'candidate': 'Approve',
-           'proportion': 0.749, 
-           'votes': 6753
-          },
-          {'candidate': 'Reject',
-           'proportion': 0.197,
-           'votes': 1779
-          },
-          {'candidate': 'undervote',
-           'proportion': 0.054,
-           'votes': 489
-          }
-          ]}
-    ]
-
-
+reported_results_bristol = []
 
 # Maybe a named tuple instead?:
 default_audit_state = {
@@ -963,31 +709,32 @@ def upload_json():
         file.save(filename)
         with open(filename, 'r') as FO:
             uploaded_content = FO.read()
-        import ast
-        global all_contests_bristol
-        #reading it as json
-        uploaded_json = json.loads(json.dumps(ast.literal_eval(uploaded_content)))
-        #clearing all_contests_bristol
-        all_contests_bristol = []
-        for current_dic in uploaded_json:
-            #making list and dictionaries from json
-            item_dic = {'id': current_dic['id'], 'title': current_dic['title'], 'candidates': []}
-            for candidate_item in current_dic['candidates']:
-                item_dic['candidates'].append(candidate_item)
-            all_contests_bristol.append(item_dic)
+        try:
+            global all_contests_bristol
+            # reading it as json
+            uploaded_json = json.loads(json.dumps(ast.literal_eval(uploaded_content)))
+            # clearing all_contests_bristol
+            all_contests_bristol = []
+            for current_dic in uploaded_json:
+                # making list and dictionaries from json
+                item_dic = {'id': current_dic['id'], 'title': current_dic['title'], 'candidates': []}
+                for candidate_item in current_dic['candidates']:
+                    item_dic['candidates'].append(candidate_item)
+                all_contests_bristol.append(item_dic)
 
-        global default_audit_state
-        #updating default_audit_state key that depend on all_contests_bristol
-        default_audit_state['all_contests']['ballot_comparison'] = all_contests_bristol
+            global default_audit_state
+            # updating default_audit_state key that depend on all_contests_bristol
+            default_audit_state['all_contests']['ballot_comparison'] = all_contests_bristol
 
-        global audit_types
-        # updating audit_types key that depend on all_contests_bristol
-        audit_types['ballot_comparison']['all_contests'] = all_contests_bristol
+            global audit_types
+            # updating audit_types key that depend on all_contests_bristol
+            audit_types['ballot_comparison']['all_contests'] = all_contests_bristol
 
-        global audit_state
-        audit_state = copy.deepcopy(default_audit_state)
-        # import to help us check json file grammar
-        import ast
+            global audit_state
+            audit_state = copy.deepcopy(default_audit_state)
+            # import to help us check json file grammar
+        except:
+            return "File Format Incorrect Please use id: title: candidates:", 500
         try:
             upc = ast.literal_eval(uploaded_content)
             # here we give the specific text format for the json file
@@ -998,6 +745,47 @@ def upload_json():
             return "File Format Incorrect Please use id: title: candidates:", 500
     return "Invalid File", 500
 # JSON function end
+
+# Second Upload JSON File Function
+@app.route('/upload-ballot-manifest-json2', methods=['POST'])
+def upload_second_json():
+    # "Be conservative in what you send, be liberal in what you accept"
+    # TODO: for transparency, also return the file's hash
+    if 'file' not in request.files:
+        return 'File not uploaded', 400
+    file = request.files['file']
+    contest_name = request.form['contest_name']
+    # "if user does not select file, browser also"
+    # "submit an empty part without filename"
+    if file.filename == '':
+        return 'No selected file', 400
+    if file: # and allowed_file(file.filename):
+        filename = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
+        file.save(filename)
+        with open(filename, 'r') as FO:
+           uploaded_content=FO.read()
+        try:
+            global reported_results_bristol
+            # reading it as json
+            uploaded_json = json.loads(json.dumps(ast.literal_eval(uploaded_content)))
+            # clearing reported_results_bristol
+            reported_results_bristol = []
+            for current_dic in uploaded_json:
+                # making list and dictionaries from json
+                item_dic = {'contest_id': current_dic['contest_id'], 'results': []}
+                for result_item in current_dic['results']:
+                    result_dic = {'candidate':result_item['candidate'],
+                                  'proportion':result_item['proportion'],
+                                  'votes':result_item['votes']}
+                    item_dic['results'].append(result_dic)
+                reported_results_bristol.append(item_dic)
+            global audit_types
+            # updating audit_types key that depend on all_contests_bristol
+            audit_types['ballot_comparison']['reported_results'] = reported_results_bristol
+            return jsonify(uploaded_content)
+        except:
+            return "File Format Incorrect Please use contest_id: results: candidate : proportion : votes :",500
+    return "Invalid File",500
 
 ### Static files
 @app.route('/jquery.js')
