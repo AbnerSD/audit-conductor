@@ -11,7 +11,8 @@
 (function(){
 
 var debugMode = false; // true;
-var appendJsonForm = true; 
+var appendJsonForm = true; // Initialize for check form state
+var appendJson2Form = true; // Initialize for check form state for second upload 
 
 if (debugMode) {
    //alert('Note: running in debug mode!');
@@ -46,7 +47,7 @@ var auditNameContainer;
 var seedContainer;
 var auditTypeContainer;
 // var finalResultContainer;
-var cvrFileUploadContainer, jsonFileUploadContainer;
+var cvrFileUploadContainer, jsonFileUploadContainer, json2FileUploadContainer;
 var ballotListDiv; // rename for consistency?
 // var ballotEntriesContainer;
 
@@ -76,7 +77,8 @@ window.onload = function() {
    auditTypeContainer = getById('auditTypeContainer');
    //finalResultContainer = getById('finalResultContainer');
    cvrFileUploadContainer = getById('cvrFileUploadContainer');
-   jsonFileUploadContainer = getById('jsonFileUploadContainer');
+   jsonFileUploadContainer = getById('jsonFileUploadContainer'); // Initialize parameter for JSON
+   json2FileUploadContainer = getById('json2FileUploadContainer'); // Initialize parameter for second JSON upload 
    ballotListDiv = getById('listOfBallotsToPull');
    // ballotEntriesContainer = getById('ballotEntriesContainer');
 
@@ -171,7 +173,8 @@ function maybeGetAuditType(andThen) {
        
       } else {
          displayJSONFile();
-         displayAuditType();
+         displayJSON2File();
+	 displayAuditType(); 
          //mainLoop();
          andThen();
       }
@@ -1099,7 +1102,7 @@ function makeBallotManifestUploadContainerJson(ballotType) {
    uploadForm.appendChild(fieldSet1);
    uploadForm.appendChild(fieldSet2);
    container.appendChild(uploadForm);
-   jsonFileUploadContainer.appendChild(container); /*this line will create html to frontend*/
+   jsonFileUploadContainer.appendChild(container); // this line will create html to frontend
   }
 };
 
@@ -1142,6 +1145,132 @@ function displayJSONFile(ballotType) {
 // Text to show that file has been uploaded succesfully 
 function JSONDisplayText(ballotType) {
 	return 'JSON File Added ';
+};
+	
+// Second JSON File upload functions HERE
+function maybeGetJSON2File(ballotType) {
+    return function() {
+        document.body.appendChild(json2FileUploadContainer);
+        if (conductorState['json_hash'][ballotType] === undefined) {
+            uploadJSON2File(ballotType);
+        } else {
+            displayJSON2File(ballotType);
+            mainLoop();
+        }
+    }
+};
+
+// Second JSON Function
+function uploadBallotManifestJson2(ballotType) {
+  makeBallotManifestUploadContainerJson2(ballotType);
+};
+
+// Creates front end for second container JSON uploading 
+function makeBallotManifestUploadContainerJson2(ballotType) {
+
+  var container2 = newElem('div');
+  var p = newElem('p');
+  p.innerHTML = 'Upload a JSON Manifest'; // Prompt to upload JSON file
+  container2.appendChild(p);
+  var uploadForm = newElem('form');
+  uploadForm.setAttribute('method', 'post');
+  uploadForm.setAttribute('enctype', 'multipart/form-data');
+  var fieldSet1 = newElem('fieldset');
+  var fieldSet2 = newElem('fieldset');
+  var fileInput = newElem('input');
+  fileInput.type = 'file';
+  fileInput.name = 'file';
+  fileInput.accept = '.json,.JSON';
+  var fileLabel = newElem('label');
+  fileLabel.for = 'file'; // works?
+  fileLabel.innerHTML = 'Select a file: ';
+  var uploadButton = newElem('button');
+  uploadButton.id = 'uploadBallotManifestButtonJson2'; // TODO: don't need (or won't)
+  uploadButton.innerHTML = 'Upload';
+  uploadButton.type = 'button'; // so it doesn't submit the form
+  var json2FileUploadContainer = getById('json2FileUploadContainer'); // Get selector
+  json2FileUploadContainer.style.display = 'block';
+  
+  uploadButton.onclick = function() {
+
+    var form_data = new FormData(uploadForm);
+    form_data.append('contest_name', ballotType);
+    $.ajax({
+      type: 'POST',
+      url: '/upload-ballot-manifest-json2',
+      data: form_data,
+      dataType: 'json',
+      contentType: false,
+      cache: false,
+      processData: false,
+      success: function() {
+
+        getConductorState(function() {
+          json2FileUploadContainer.classList.add('complete');
+          chooseAuditType();
+
+          container2.innerHTML = JSON2DisplayText(ballotType); // Displays message upon succesful upload
+          container2.removeChild(uploadForm); // Remove form child
+          mainLoop();
+          appendJson2Form = false;
+        });
+      },
+    }).fail(reportError);
+  };
+
+  if (appendJson2Form) {
+
+    fieldSet1.appendChild(fileLabel);
+    fieldSet1.appendChild(fileInput);
+    fieldSet2.appendChild(uploadButton);
+    uploadForm.appendChild(fieldSet1);
+    uploadForm.appendChild(fieldSet2);
+    container2.appendChild(uploadForm);
+    json2FileUploadContainer.appendChild(container2); // this line will create html to frontend
+  }
+};
+
+// upload Json 2 function
+function uploadSecondJSONFile(ballotType) {
+	json2FileUploadContainer.style.display = 'block';
+
+	var uploadButton = getById('uploadJSON2Button');
+	var uploadForm = getById('uploadJSON2Form');
+
+	$(uploadButton).click(function() {
+		var form_data = new FormData(uploadForm);
+		form_data.append('contest_name', ballotType);
+		$.ajax({
+			type: 'POST',
+			url: '/upload-json-file', // ?contest_name='+ballotType,
+			data: form_data,
+			contentType: false,
+			cache: false,
+			processData: false,
+			success: function(data) {
+				console.log('Success!');
+				getConductorState(function() {
+					displayJSON2File(ballotType);
+					mainLoop();
+				});
+			},
+		}).fail(reportError);
+	});
+
+}
+
+// this will display text to page after second json upload 
+function displayJSON2File(ballotType) {
+  json2FileUploadContainer.style.display = 'block';
+  json2FileUploadContainer.innerHTML = '(Second JSON file added)'; // Displayed after JSON file is uploaded
+  json2FileUploadContainer.classList.add('complete');
+
+  //uiState['got_cvr_file'] = true;
+};
+
+// Text to show that file has been uploaded succesfully for second JSON 
+function JSON2DisplayText(ballotType){
+	return 'Second JSON File Added ';
 };
    
 })();
