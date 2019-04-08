@@ -1083,7 +1083,8 @@ function makeBallotManifestUploadContainerJson(ballotType) {
 
         getConductorState(function() {
 		  jsonFileUploadContainer.classList.add('complete');
-          chooseAuditType();
+		  uploadBallotManifestJson2('ballot_comparison'); // For second upload container
+          //chooseAuditType();
          
           container.innerHTML = JSONDisplayText(ballotType); // Displays message upon succesful upload
 		  container.removeChild(uploadForm); // Remove form child
