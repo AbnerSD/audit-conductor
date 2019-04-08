@@ -10,8 +10,6 @@
 
 import copy
 import csv
-import json # For use with json files
-import ast  # To help read JSON file text data 
 from datetime import datetime # , isoformat
 from flask import Flask, jsonify, request, url_for, send_from_directory, Response
 from werkzeug import secure_filename
@@ -688,104 +686,6 @@ def log_time():
    with open(fname, 'a') as states_file:
        states_file.write('\n'+str(tuple((datetime.now().isoformat(), j))))
    return ''
-
-# JSON file upload function to allow .json uploads and check text format
-@app.route('/upload-ballot-manifest-json', methods=['POST'])
-def upload_json():
-    # "Be conservative in what you send, be liberal in what you accept"
-    # TODO: for transparency, also return the file's hash
-    if 'file' not in request.files:
-        return 'File not uploaded', 400
-    else:
-        print("File found")
-    file = request.files['file']
-    contest_name = request.form['contest_name']
-    # "if user does not select file, browser also"
-    # "submit an empty part without filename"
-    if file.filename == '':
-        return 'No selected file', 400
-    if file:  # and allowed_file(file.filename):
-        filename = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
-        file.save(filename)
-        with open(filename, 'r') as FO:
-            uploaded_content = FO.read()
-        try:
-            global all_contests_bristol
-            # reading it as json
-            uploaded_json = json.loads(json.dumps(ast.literal_eval(uploaded_content)))
-            # clearing all_contests_bristol
-            all_contests_bristol = []
-            for current_dic in uploaded_json:
-                # making list and dictionaries from json
-                item_dic = {'id': current_dic['id'], 'title': current_dic['title'], 'candidates': []}
-                for candidate_item in current_dic['candidates']:
-                    item_dic['candidates'].append(candidate_item)
-                all_contests_bristol.append(item_dic)
-
-            global default_audit_state
-            # updating default_audit_state key that depend on all_contests_bristol
-            default_audit_state['all_contests']['ballot_comparison'] = all_contests_bristol
-
-            global audit_types
-            # updating audit_types key that depend on all_contests_bristol
-            audit_types['ballot_comparison']['all_contests'] = all_contests_bristol
-
-            global audit_state
-            audit_state = copy.deepcopy(default_audit_state)
-            # import to help us check json file grammar
-        except:
-            return "File Format Incorrect Please use id: title: candidates:", 500
-        try:
-            upc = ast.literal_eval(uploaded_content)
-            # here we give the specific text format for the json file
-            for i in upc:
-                a, b, c = i['id'], i['title'], i['candidates']
-            return jsonify(uploaded_content)
-        except:
-            return "File Format Incorrect Please use id: title: candidates:", 500
-    return "Invalid File", 500
-# JSON function end
-
-# Second Upload JSON File Function
-@app.route('/upload-ballot-manifest-json2', methods=['POST'])
-def upload_second_json():
-    # "Be conservative in what you send, be liberal in what you accept"
-    # TODO: for transparency, also return the file's hash
-    if 'file' not in request.files:
-        return 'File not uploaded', 400
-    file = request.files['file']
-    contest_name = request.form['contest_name']
-    # "if user does not select file, browser also"
-    # "submit an empty part without filename"
-    if file.filename == '':
-        return 'No selected file', 400
-    if file: # and allowed_file(file.filename):
-        filename = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
-        file.save(filename)
-        with open(filename, 'r') as FO:
-           uploaded_content=FO.read()
-        try:
-            global reported_results_bristol
-            # reading it as json
-            uploaded_json = json.loads(json.dumps(ast.literal_eval(uploaded_content)))
-            # clearing reported_results_bristol
-            reported_results_bristol = []
-            for current_dic in uploaded_json:
-                # making list and dictionaries from json
-                item_dic = {'contest_id': current_dic['contest_id'], 'results': []}
-                for result_item in current_dic['results']:
-                    result_dic = {'candidate':result_item['candidate'],
-                                  'proportion':result_item['proportion'],
-                                  'votes':result_item['votes']}
-                    item_dic['results'].append(result_dic)
-                reported_results_bristol.append(item_dic)
-            global audit_types
-            # updating audit_types key that depend on all_contests_bristol
-            audit_types['ballot_comparison']['reported_results'] = reported_results_bristol
-            return jsonify(uploaded_content)
-        except:
-            return "File Format Incorrect Please use contest_id: results: candidate : proportion : votes :",500
-    return "Invalid File",500
 
 ### Static files
 @app.route('/jquery.js')
