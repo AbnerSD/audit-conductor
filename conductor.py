@@ -764,7 +764,7 @@ def upload_second_json():
         filename = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
         file.save(filename)
         with open(filename, 'r') as FO:
-           uploaded_content=FO.read()
+           uploaded_content = FO.read()
         try:
             global reported_results_bristol
             # reading it as json
