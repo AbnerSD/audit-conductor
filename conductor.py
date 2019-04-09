@@ -734,18 +734,11 @@ def upload_json():
             global audit_state
             audit_state = copy.deepcopy(default_audit_state)
             # import to help us check json file grammar
-        except:
-            return "File Format Incorrect Please use id: title: candidates:", 500
-        try:
-            upc = ast.literal_eval(uploaded_content)
-            # here we give the specific text format for the json file
-            for i in upc:
-                a, b, c = i['id'], i['title'], i['candidates']
             return jsonify(uploaded_content)
         except:
             return "File Format Incorrect Please use id: title: candidates:", 500
     return "Invalid File", 500
-# first .json upload function end
+# JSON function end
 
 # Second Upload .json File Function
 @app.route('/upload-ballot-manifest-json2', methods=['POST'])
