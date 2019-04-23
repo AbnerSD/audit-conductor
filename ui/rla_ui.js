@@ -806,7 +806,11 @@ function newInnerForm(numToGoUpTo, ballotType, ballot_id, optionalListOfContests
    innerForm = newElem('div');
    saveButton = newElem('button');
    saveButton.innerHTML = 'Save';
-
+   
+   var p = newElem('p'); // Add P Tag
+   p.classList.add('checkBoxNotSelected'); // Add Class
+   var checkBoxNotSelected = document.createTextNode("Please Make A/All Selection(s) Before Saving"); // Add text
+   p.appendChild(checkBoxNotSelected);
  
    innerForm.classList.add('innerForm');
 
@@ -827,22 +831,46 @@ function newInnerForm(numToGoUpTo, ballotType, ballot_id, optionalListOfContests
    });
 
    innerForm.appendChild(saveButton);
+   innerForm.appendChild(p);
 
    saveButton.onclick = function(event) {
       var dat = {ballot_id: ballot_id, contests: {}};
 
       timestampEvent({'event': 'click_first_save', 'ballot_id': ballot_id});
+	   
+      var radioSelection = false; // Check id Radio Button Select OR Not
+            $.each(contests, function (i, contest) { // Loop
+                if ($("input[name='" + contestCheckboxName(ballot_id, contest.id) + "']").is(":checked") == true) { // Check if Radio Button Selected
+                    var x = document.querySelector('input[name="' + contestCheckboxName(ballot_id, contest.id) + '"]:checked').value; // Get Radio Button Value
+                    dat['contests'][contest.id] = x;
+                } else {
+                    radioSelection = true;
+                }
+                var lengthContests = contests.length - 1; // Get Array Length of questions
+                if (lengthContests == i) { // If length match with loop index
+                    if (radioSelection) { // If radio button checked
+                        $(".checkBoxNotSelected").css("display", "inline-block"); // Display error message.
+                    } else {
+                        // If every question is checked.
+                        innerForm.parentNode.appendChild(newInterpretationConfirmation(numToGoUpTo, ballotType, dat, optionalListOfContests));
+                        removeElem(innerForm);
+                    }
+                }
+            });
 
-      contests.forEach(function(contest) {
-         var x = document.querySelector('input[name="'+contestCheckboxName(ballot_id, contest.id)+'"]:checked').value;
-         dat['contests'][contest.id] = x;
-      });
-      innerForm.parentNode.appendChild(newInterpretationConfirmation(numToGoUpTo, ballotType, dat, optionalListOfContests));
-      // innerForm.parentNode.removeChild(innerForm); // This has to be after the other '.parentNode's or they'll be null
-      removeElem(innerForm);
-   };
-   return innerForm;
-};
+            /*            contests.forEach(function (contest) {
+                                var x = document.querySelector('input[name="' + contestCheckboxName(ballot_id, contest.id) + '"]:checked').value;
+                                dat['contests'][contest.id] = x;
+                                innerForm.parentNode.appendChild(newInterpretationConfirmation(numToGoUpTo, ballotType, dat, optionalListOfContests));
+                                // innerForm.parentNode.removeChild(innerForm); // This has to be after the other '.parentNode's or they'll be null
+                                removeElem(innerForm);
+                        });*/
+
+        };
+        return innerForm;
+    };
+
+      
 
 function newInterpretationConfirmation(numToGoUpTo, ballotType, interpretationJSON, optionalListOfContests) {
    var dat = interpretationJSON;
