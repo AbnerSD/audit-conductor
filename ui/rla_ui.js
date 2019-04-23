@@ -806,7 +806,7 @@ function newInnerForm(numToGoUpTo, ballotType, ballot_id, optionalListOfContests
    innerForm = newElem('div');
    saveButton = newElem('button');
    saveButton.innerHTML = 'Save';
-   
+   # New element created for the no choice selection text
    var p = newElem('p'); // Add P Tag
    p.classList.add('checkBoxNotSelected'); // Add Class
    var checkBoxNotSelected = document.createTextNode("Please Make A/All Selection(s) Before Saving"); // Add text
